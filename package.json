@@ -1,0 +1,24 @@
+{
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "name": "ciel2-projet1",
+  "description": "ekip",
+  "version": "1.0.0",
+  "main": "server.js",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aymericfraissard/CIEL2-projet1.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/aymericfraissard/CIEL2-projet1/issues"
+  },
+  "homepage": "https://github.com/aymericfraissard/CIEL2-projet1#readme"
+}
