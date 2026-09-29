@@ -2,11 +2,13 @@ const express = require('express');
 const app = express();
 const port = 3001;
 const mysql = require('mysql2');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const IPServer = process.env.IPServer;
 
 const connection = mysql.createConnection({ // configuration de la connexion à la base de données
-  host: process.env.ipBDD, //changer ip
+  host: process.env.ipBDD,
   user: process.env.LoginBDD,
   password: process.env.PasswordBDD,
   database: process.env.DatabaseBDD
@@ -14,19 +16,166 @@ const connection = mysql.createConnection({ // configuration de la connexion à 
 
 connection.connect((err) => {
   if (err) {
-    console.error('Erreur de connexion à la base de données :', err);
+    console.error('[BDD] Erreur de connexion :', err.code, err.message);
     return;
   }
-  console.log('Connecté à la base de données MySQL.');
+  console.log('[BDD] Connexion MySQL réussie.');
 });
 
 app.use(express.json());
 app.use(express.static('public'));
 
-function inscription(login, passwd) {
-  
-}
+//=========================================================================================================
+
+// Route pour l'inscription d'un nouvel utilisateur
+app.post('/register', async (req, res) => {
+  console.log('[INSCRIPTION] Début de la demande.');
+
+  const login = req.body.V_log;
+  const motDePasse = req.body.V_pass;
+
+  if (typeof login !== 'string' || typeof motDePasse !== 'string') {
+    console.log('[INSCRIPTION] Champs absents ou invalides.');
+    return res.status(400).json({ message: 'Veuillez remplir les deux champs.' });
+  }
+
+  const loginUser = login.trim();
+  console.log(`[INSCRIPTION] Vérification des champs pour le login de ${loginUser.length} caractères.`);
+
+  if (loginUser.length < 4) {
+    console.log('[INSCRIPTION] Login trop court.');
+    return res.status(400).json({ message: 'Le login doit contenir au moins 4 caractères.' });
+  }
+  if (loginUser.length > 20) {
+    console.log('[INSCRIPTION] Login trop long.');
+    return res.status(400).json({ message: 'Le login ne doit pas dépasser 20 caractères.' });
+  }
+  if (motDePasse.length < 8) {
+    console.log('[INSCRIPTION] Mot de passe trop court.');
+    return res.status(400).json({ message: 'Le mot de passe doit contenir au moins 8 caractères.' });
+  }
+  if (motDePasse.length > 30) {
+    console.log('[INSCRIPTION] Mot de passe trop long.');
+    return res.status(400).json({ message: 'Le mot de passe ne doit pas dépasser 30 caractères.' });
+  }
+
+  console.log('[INSCRIPTION] Vérification du login dans la base.');
+  connection.query(
+    'SELECT login FROM User WHERE login = ?',
+    [loginUser],
+    (err, utilisateurs) => {
+      if (err) {
+        console.log('[INSCRIPTION] Erreur pendant la recherche :', err.message);
+        return res.status(500).json({ message: 'Erreur serveur lors de l’inscription.' });
+      }
+
+      if (utilisateurs.length > 0) {
+        console.log('[INSCRIPTION] Login déjà utilisé.');
+        return res.status(400).json({ message: 'Ce login est déjà utilisé.' });
+      }
+
+      console.log('[INSCRIPTION] Hachage du mot de passe.');
+      bcrypt.hash(motDePasse, 10, (err, motDePasseHache) => {
+        if (err) {
+          console.log('[INSCRIPTION] Erreur pendant le hachage :', err.message);
+          return res.status(500).json({ message: 'Erreur serveur lors de l’inscription.' });
+        }
+
+        console.log('[INSCRIPTION] Enregistrement du nouvel utilisateur.');
+        connection.query(
+          'INSERT INTO User (login, password) VALUES (?, ?)',
+          [loginUser, motDePasseHache],
+          (err, resultat) => {
+            if (err) {
+              console.log('[INSCRIPTION] Erreur pendant l’enregistrement :', err.message);
+              return res.status(500).json({ message: 'Erreur serveur lors de l’inscription.' });
+            }
+
+            console.log('[INSCRIPTION] Création du token.');
+            jwt.sign(
+              { id: resultat.insertId },
+              process.env.SecretJWT,
+              { expiresIn: '24h' },
+              (err, tokenId) => {
+                if (err) {
+                  console.log('[INSCRIPTION] Erreur pendant la création du token :', err.message);
+                  return res.status(500).json({ message: 'Erreur serveur lors de l’inscription.' });
+                }
+
+                console.log('[INSCRIPTION] Inscription réussie.');
+                return res.status(201).json({ message: 'Inscription réussie.', tokenId });
+              }
+            );
+          }
+        );
+      });
+    }
+  );
+});
+
+//Route pour la connexion d'un utilisateur existant
+app.post('/login', async (req, res) => {
+  console.log('[CONNEXION] Début de la demande.');
+
+  const login = req.body.V_log;
+  const motDePasse = req.body.V_pass;
+
+  if (typeof login !== 'string' || typeof motDePasse !== 'string' || !login.trim() || !motDePasse) {
+    console.log('[CONNEXION] Champs absents ou invalides.');
+    return res.status(400).json({ message: 'Veuillez remplir les deux champs.' });
+  }
+
+  console.log('[CONNEXION] Recherche de l’utilisateur dans la base.');
+  connection.query(
+    'SELECT id, login, password FROM User WHERE login = ?',
+    [login.trim()],
+    (err, utilisateurs) => {
+      if (err) {
+        console.log('[CONNEXION] Erreur pendant la recherche :', err.message);
+        return res.status(500).json({ message: 'Erreur serveur lors de la connexion.' });
+      }
+
+      if (utilisateurs.length === 0) {
+        console.log('[CONNEXION] Login inconnu.');
+        return res.status(401).json({ message: 'Identifiants invalides.' });
+      }
+
+      const utilisateur = utilisateurs[0];
+      console.log('[CONNEXION] Vérification du mot de passe.');
+      bcrypt.compare(motDePasse, utilisateur.password, (err, motDePasseValide) => {
+        if (err) {
+          console.log('[CONNEXION] Erreur pendant la vérification :', err.message);
+          return res.status(500).json({ message: 'Erreur serveur lors de la connexion.' });
+        }
+
+        if (!motDePasseValide) {
+          console.log('[CONNEXION] Mot de passe incorrect.');
+          return res.status(401).json({ message: 'Identifiants invalides.' });
+        }
+
+        console.log('[CONNEXION] Création du token.');
+        jwt.sign(
+          { id: utilisateur.id },
+          process.env.SecretJWT,
+          { expiresIn: '24h' },
+          (err, tokenId) => {
+            if (err) {
+              console.log('[CONNEXION] Erreur pendant la création du token :', err.message);
+              return res.status(500).json({ message: 'Erreur serveur lors de la connexion.' });
+            }
+
+            console.log('[CONNEXION] Connexion réussie.');
+            return res.json({ message: 'Connexion réussie.', tokenId });
+          }
+        );
+      });
+    }
+  );
+});
+
+
+//=========================================================================================================
 
 app.listen(port, IPServer, () => {
-  console.log(`Serveur en ligne sur http://${IPServer}:${port}/`);
+  console.log(`[SERVEUR] En ligne sur http://${IPServer}:${port}/`);
 });

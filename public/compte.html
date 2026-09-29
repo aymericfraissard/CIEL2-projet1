@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Mon compte</title>
+	<link rel="stylesheet" href="main.css">
+</head>
+<body>
+	<header>
+		<h1>Mon compte</h1>
+		<nav aria-label="Navigation principale">
+			<a href="accueil.html">Accueil</a>
+		</nav>
+	</header>
+
+	<main>
+		<h2>Mon profil</h2>
+
+		<section aria-labelledby="photo-title">
+			<h3 id="photo-title">Photo de profil</h3>
+			<label for="photoProfil">Choisir une photo</label>
+			<input id="photoProfil" name="photoProfil" type="file" accept="image/*">
+			<button id="btnModifierPhoto" type="button">Modifier la photo</button>
+		</section>
+
+		<section aria-labelledby="password-title">
+			<h3 id="password-title">Modifier le mot de passe</h3>
+
+			<label for="nouveauMotDePasse">Nouveau mot de passe</label>
+			<input id="nouveauMotDePasse" name="nouveauMotDePasse" type="password" minlength="8" autocomplete="new-password">
+
+			<label for="confirmationMotDePasse">Confirmer le nouveau mot de passe</label>
+			<input id="confirmationMotDePasse" name="confirmationMotDePasse" type="password" minlength="8" autocomplete="new-password">
+
+			<button id="btnModifierMotDePasse" type="button">Enregistrer le mot de passe</button>
+		</section>
+
+		<section aria-labelledby="delete-title">
+			<h3 id="delete-title">Suppression du compte</h3>
+			<p>Cette action supprimera votre compte.</p>
+			<button id="btnSupprimerCompte" type="button">Supprimer mon compte</button>
+		</section>
+
+		<p id="messageCompte" aria-live="polite"></p>
+	</main>
+
+	<footer>
+		<p>Site proposé par les LGPD</p>
+	</footer>
+
+	<script src="compte.js"></script>
+</body>
+</html>

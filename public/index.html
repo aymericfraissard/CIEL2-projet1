@@ -3,37 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Titre de la page</title>
+    <title>Connexion et inscription</title>
     <link rel="stylesheet" href="main.css">
 </head>
 <body>
-
     <header>
-        <h1>Site web super cool</h1>
+        <h1>Mon espace</h1>
     </header>
 
     <main>
-        <h2>Veuillez vous connecter : </h2>
-      <div id="regForm" class="auth-form">
-        <div>
-          <label>Identifiant</label>
-          <input id="regUser" type="text" placeholder="Identifiant" />
-        </div>
-        <div>
-          <label>Mot de passe</label>
-          <input id="regPass" type="password" placeholder="Mot de Passe" />
-        </div>
-        <button id="btnInscription">S'enregistrer</button>
-        <div id="regMsg"></div>
-      </div>
-    </div>
-  </div>
+        <h2>Connexion</h2>
+        <form id="connexionForm">
+            <label for="loginUser">Identifiant</label>
+            <input id="loginUser" name="login" type="text" minlength="4" maxlength="20" autocomplete="username" required>
+
+            <label for="loginPass">Mot de passe</label>
+            <input id="loginPass" name="password" type="password" autocomplete="current-password" required>
+
+            <button id="btnConnexion" type="submit">Se connecter</button>
+            <p id="zoneMessage" aria-live="polite"></p>
+        </form>
+
+        <h2>Créer un compte</h2>
+        <form id="inscriptionForm">
+            <label for="registerUser">Identifiant</label>
+            <input id="registerUser" name="login" type="text" minlength="4" maxlength="20" autocomplete="username" required>
+
+            <label for="registerPass">Mot de passe</label>
+            <input id="registerPass" name="password" type="password" minlength="8" maxlength="30" autocomplete="new-password" required>
+
+            <button id="btnInscription" type="submit">S’inscrire</button>
+            <p id="registerMsg" aria-live="polite"></p>
+        </form>
     </main>
 
     <footer>
         <p>Site proposé par les LGPD</p>
     </footer>
 
-    <script src="script.js"></script>
+    <script src="front.js"></script>
 </body>
 </html>
