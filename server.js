@@ -89,8 +89,8 @@ app.post('/register', async (req, res) => {
 
         console.log('[INSCRIPTION] Enregistrement du nouvel utilisateur.');
         connection.query(
-          'INSERT INTO user (login, password) VALUES (?, ?)',
-          [loginUser, motDePasseHache],
+          'INSERT INTO user (login, password,dateCreation) VALUES (?, ?, ?)',
+          [loginUser, motDePasseHache, new Date()],
           (err, resultat) => {
             if (err) {
               console.log('[INSCRIPTION] Erreur pendant l’enregistrement :', err.message);

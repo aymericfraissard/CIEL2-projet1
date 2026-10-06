@@ -1,6 +1,7 @@
 const btnConnexion = document.getElementById('btnConnexion');
 const btnInscription = document.getElementById('btnInscription');
-
+const zoneMessage1 = document.getElementById('zoneMessage1');
+const zoneMessage = document.getElementById('zoneMessage');
 
 // envoi du formulaire de connexion vers POST /login
 btnConnexion.addEventListener('click', function () {
@@ -40,7 +41,7 @@ btnInscription.addEventListener('click', function () {
         localStorage.setItem('pseudo', pseudo);
         afficherApplication();
       } else {
-        zoneMessage.textContent = donnees.message;
+        zoneMessage1.textContent = donnees.message;
       }
     });
 });
@@ -50,7 +51,7 @@ function afficherApplication() {
   fetch('/check', {
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + localStorage.getItem('Token   Id')
+      'Authorization': 'Bearer ' + localStorage.getItem('tokenId')
     }
   })
     .then(reponse => reponse.json())
