@@ -179,7 +179,74 @@ app.post('/login', async (req, res) => {
   );
 });
 
+app.get('/profil', auth, (req, res) => {
+  connection.query('SELECT login, photo, dateCreation FROM user WHERE id = ?',
+    [req.auth.id],
+    (err, result) => {
+      if (err) {
+        console.log('Erreur lors de la récupération du profil :', err.message);
+        return res.status(500).json({ message: 'Erreur serveur lors de la récupération du profil.' });
+      }
 
+      if (result.length === 0) {
+        console.log('Utilisateur non trouvé.');
+        return res.status(404).json({ message: 'Utilisateur non trouvé.' });
+      }
+      const utilisateur = result[0];
+      return res.json({ login: utilisateur.login, photo: utilisateur.photo, dateCreation: utilisateur.dateCreation });
+    }
+  );
+});
+
+app.post('/Modifprofil', auth, (req, res) => {
+  const { password, photo } = req.body;
+  photo = "img/" + photo + ".png"; 
+  connection.query('UPDATE user SET password = ?, photo = ? WHERE id = ?',
+    [password, photo, req.auth.id],
+    (err, result) => {
+      if (err) {
+        console.log('Erreur lors de la modification du profil :', err.message);
+        return res.status(500).json({ message: 'Erreur serveur lors de la modification du profil.' });
+      }
+      return res.json({ message: 'Profil modifié avec succès.' });
+    }
+  );
+});
+
+app.post('/deleteprofil', auth, (req, res) => {
+  const id = req.auth.id;
+  connection.query('SELECT admin,login FROM user WHERE id = ?', [id], 
+    (err, result) => {
+      if (err) {
+        console.log('Erreur lors de la vérification des droits d\'administrateur :', err.message);
+        return res.status(500).json({ message: 'Erreur serveur lors de la vérification des droits d\'administrateur.' });
+      }
+      if (result.length == NULL){ 
+              connection.query('DELETE FROM user WHERE id = ?', [id],
+              (err, result) => {
+                if (err) {
+                  console.log('Erreur lors de la suppression du profil :', err.message);
+                  return res.status(500).json({ message: 'Erreur serveur lors de la suppression du profil.' });
+                }
+                return res.json({ message: 'Profil supprimé avec succès.' });
+              }
+            );
+      } 
+      else if (result[0].admin == 1 && req.body.login != result[0].login) {
+        connection.query('DELETE FROM user WHERE login = ?', [req.body.login],
+          (err, result) => {
+            if (err) {
+              console.log('Erreur lors de la suppression du profil :', err.message);
+              return res.status(500).json({ message: 'Erreur serveur lors de la suppression du profil.' });
+            }
+            return res.json({ message: 'Profil supprimé avec succès.' });
+          }
+        );
+      } })});
+  
+app.post('/deconnection', auth, (req, res) => {
+  //delete le token
+});
 //=========================================================================================================
 
 app.listen(port, IPServer, () => {

@@ -57,10 +57,7 @@ function afficherApplication() {
     .then(reponse => reponse.json())
     .then(data => {
       if (data.data === true) {
-        document.getElementById('authOverlay').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'block';
-        document.getElementById('displayUsername').textContent = pseudoConnecte;
-        chargerClassement();
+        window.location.href = 'accueil.html';
       }
       else {
         return;
