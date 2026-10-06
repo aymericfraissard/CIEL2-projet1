@@ -1,3 +1,7 @@
+const btnConnexion = document.getElementById('btnConnexion');
+const btnInscription = document.getElementById('btnInscription');
+
+
 // envoi du formulaire de connexion vers POST /login
 btnConnexion.addEventListener('click', function () {
   const pseudo = document.getElementById('loginUser').value;
@@ -20,20 +24,46 @@ btnConnexion.addEventListener('click', function () {
     });
 });
 
+btnInscription.addEventListener('click', function () {
+  const pseudo = document.getElementById('registerUser').value;
+  const motDePasse = document.getElementById('registerPass').value;
 
-// déconnexion
-btnDeconnexion.addEventListener('click', function () {
-  fetch('/endgame', {
+  fetch('/register', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + localStorage.getItem('tokenId')
-    },
-    body: JSON.stringify({})
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ V_log: pseudo, V_pass: motDePasse })
   })
     .then(function (reponse) { return reponse.json(); })
     .then(function (donnees) {
-      console.log(donnees.message);
+      if (donnees.tokenId) {
+        localStorage.setItem('tokenId', donnees.tokenId);
+        localStorage.setItem('pseudo', pseudo);
+        afficherApplication();
+      } else {
+        zoneMessage.textContent = donnees.message;
+      }
     });
-
 });
+
+//on cache le pop-up et on affiche l'application principale
+function afficherApplication() {
+  fetch('/check', {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + localStorage.getItem('Token   Id')
+    }
+  })
+    .then(reponse => reponse.json())
+    .then(data => {
+      if (data.data === true) {
+        document.getElementById('authOverlay').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        document.getElementById('displayUsername').textContent = pseudoConnecte;
+        chargerClassement();
+      }
+      else {
+        return;
+
+      }
+    })
+};

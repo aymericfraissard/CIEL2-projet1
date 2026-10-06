@@ -6,12 +6,13 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const IPServer = process.env.IPServer;
+const auth = require('./middleware/auth');
 
 const connection = mysql.createConnection({ // configuration de la connexion à la base de données
   host: process.env.ipBDD,
   user: process.env.LoginBDD,
   password: process.env.PasswordBDD,
-  database: process.env.DatabaseBDD
+  database: process.env.DatabaseBDD 
 });
 
 connection.connect((err) => {
@@ -26,6 +27,11 @@ app.use(express.json());
 app.use(express.static('public'));
 
 //=========================================================================================================
+
+app.get('/check', auth, (req, res) => {
+  res.json({ data: true });
+});
+
 
 // Route pour l'inscription d'un nouvel utilisateur
 app.post('/register', async (req, res) => {
@@ -61,7 +67,7 @@ app.post('/register', async (req, res) => {
 
   console.log('[INSCRIPTION] Vérification du login dans la base.');
   connection.query(
-    'SELECT login FROM User WHERE login = ?',
+    'SELECT login FROM user WHERE login = ?',
     [loginUser],
     (err, utilisateurs) => {
       if (err) {
@@ -83,7 +89,7 @@ app.post('/register', async (req, res) => {
 
         console.log('[INSCRIPTION] Enregistrement du nouvel utilisateur.');
         connection.query(
-          'INSERT INTO User (login, password) VALUES (?, ?)',
+          'INSERT INTO user (login, password) VALUES (?, ?)',
           [loginUser, motDePasseHache],
           (err, resultat) => {
             if (err) {
@@ -127,7 +133,7 @@ app.post('/login', async (req, res) => {
 
   console.log('[CONNEXION] Recherche de l’utilisateur dans la base.');
   connection.query(
-    'SELECT id, login, password FROM User WHERE login = ?',
+    'SELECT id, login, password FROM user WHERE login = ?',
     [login.trim()],
     (err, utilisateurs) => {
       if (err) {
