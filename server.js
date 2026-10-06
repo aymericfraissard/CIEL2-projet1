@@ -198,11 +198,22 @@ app.get('/profil', auth, (req, res) => {
   );
 });
 
-app.post('/Modifprofil', auth, (req, res) => {
-  const { password, photo } = req.body;
-  photo = "img/" + photo + ".png"; 
-  connection.query('UPDATE user SET password = ?, photo = ? WHERE id = ?',
-    [password, photo, req.auth.id],
+app.post('/Modifprofilmdp', auth, async (req, res) => {
+  const password = req.body.password;
+  if (password && password.length < 8) {
+    return res.status(400).json({ message: 'Le mot de passe doit contenir au moins 8 caractères.' });
+  }
+  else if (password && password.length > 30) {
+    return res.status(400).json({ message: 'Le mot de passe ne doit pas dépasser 30 caractères.' });
+  }
+  else if (password == undefined) {
+    return res.status(400).json({ message: 'merci de mettre votre nouveau mot de passe' });
+  //photo = "img/" + photo + ".png"; 
+  }
+  else {
+  let hache = await bcrypt.hash(req.body.password, 10);
+  connection.query('UPDATE user SET password = ? WHERE id = ?',
+    [hache, req.auth.id],
     (err, result) => {
       if (err) {
         console.log('Erreur lors de la modification du profil :', err.message);
@@ -211,17 +222,22 @@ app.post('/Modifprofil', auth, (req, res) => {
       return res.json({ message: 'Profil modifié avec succès.' });
     }
   );
+}
 });
+app.post('/Modifprofilphoto', auth, (req, res) => {
+  // a faire
+  return res.json({ message: 'cette fonctionnalité n\'est pas encore terminé' });
+  });
 
 app.post('/deleteprofil', auth, (req, res) => {
   const id = req.auth.id;
   connection.query('SELECT admin,login FROM user WHERE id = ?', [id], 
     (err, result) => {
       if (err) {
-        console.log('Erreur lors de la vérification des droits d\'administrateur :', err.message);
-        return res.status(500).json({ message: 'Erreur serveur lors de la vérification des droits d\'administrateur.' });
+        console.log('Erreur lors de la vérification si il est admin ou non :', err.message);
+        return res.status(500).json({ message: 'Erreur serveur lors de la vérification si il est admin ou non.' });
       }
-      if (result.length == NULL){ 
+      if (result.length == 0){ 
               connection.query('DELETE FROM user WHERE id = ?', [id],
               (err, result) => {
                 if (err) {
@@ -233,7 +249,8 @@ app.post('/deleteprofil', auth, (req, res) => {
             );
       } 
       else if (result[0].admin == 1 && req.body.login != result[0].login) {
-        connection.query('DELETE FROM user WHERE login = ?', [req.body.login],
+        connection.query('DELETE FROM user WHERE login = ?', 
+          [req.body.login],
           (err, result) => {
             if (err) {
               console.log('Erreur lors de la suppression du profil :', err.message);
@@ -244,8 +261,38 @@ app.post('/deleteprofil', auth, (req, res) => {
         );
       } })});
   
+app.get('/Allusers', auth, (req, res) => {
+  connection.query('SELECT admin FROM user WHERE id = ?', 
+    [req.auth.id],
+    (err, result) => {
+      if (err) {
+        console.log('Erreur lors de la vérification si il est admin ou non  :', err.message);
+        return res.status(500).json({ message: 'Erreur serveur lors de la vérification si il est admin ou non.' });
+      }
+      else if (result.length == 0 ) {
+        return res.status(403).json({ message: 'Vous n\'êtes pas autorisé a faire ceci.' });
+      }
+      else if (result[0].admin == 1) {
+        connection.query('SELECT login FROM user',
+          (err, result) => {
+            if (err) {
+              console.log('Erreur lors de la récupération deses utilisateurs :', err.message);
+              return res.status(500).json({ message: 'Erreur serveur lors de la récupération de tous les utilisateurs.' });
+            }
+            return res.json({ users: result });
+          }
+        );
+      }
+      else {
+        return res.status(403).json({ message: 'Vous n\'êtes pas autorisé a faire ceci.' });
+      }
+    })
+});
+  
 app.post('/deconnection', auth, (req, res) => {
   //delete le token
+  res.clearCookie(req.auth.tokenId);
+  res.json({ message: 'Déconnexion réussie.' });
 });
 //=========================================================================================================
 
