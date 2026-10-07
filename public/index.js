@@ -57,11 +57,20 @@ function afficherApplication() {
     .then(reponse => reponse.json())
     .then(data => {
       if (data.data === true) {
-        window.location.href = 'accueil.html';
-      }
-      else {
-        return;
-
+        fetch('/profil', {
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('tokenId')
+          }
+        })
+        .then(response => response.json())
+        .then(profil => {
+          if (profil.admin === 1) {
+            window.location.href = 'admin.html';
+          } else {
+            window.location.href = 'accueil.html';
+          }
+        });
       }
     })
 };

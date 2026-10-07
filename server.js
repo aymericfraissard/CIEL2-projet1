@@ -180,7 +180,7 @@ app.post('/login', async (req, res) => {
 });
 
 app.get('/profil', auth, (req, res) => {
-  connection.query('SELECT login, photo, dateCreation FROM user WHERE id = ?',
+  connection.query('SELECT login, dateCreation, admin FROM user WHERE id = ?',
     [req.auth.id],
     (err, result) => {
       if (err) {
@@ -193,105 +193,120 @@ app.get('/profil', auth, (req, res) => {
         return res.status(404).json({ message: 'Utilisateur non trouvé.' });
       }
       const utilisateur = result[0];
-      return res.json({ login: utilisateur.login, photo: utilisateur.photo, dateCreation: utilisateur.dateCreation });
+      return res.json({ login: utilisateur.login, dateCreation: utilisateur.dateCreation, admin: utilisateur.admin });
     }
   );
 });
 
+// Modifier le mot de passe
 app.post('/Modifprofilmdp', auth, async (req, res) => {
   const password = req.body.password;
+
   if (password && password.length < 8) {
     return res.status(400).json({ message: 'Le mot de passe doit contenir au moins 8 caractères.' });
   }
-  else if (password && password.length > 30) {
+  if (password && password.length > 30) {
     return res.status(400).json({ message: 'Le mot de passe ne doit pas dépasser 30 caractères.' });
   }
-  else if (password == undefined) {
-    return res.status(400).json({ message: 'merci de mettre votre nouveau mot de passe' });
-  //photo = "img/" + photo + ".png"; 
+  if (password === undefined) {
+    return res.status(400).json({ message: 'Veuillez mettre votre nouveau mot de passe.' });
   }
-  else {
-  let hache = await bcrypt.hash(req.body.password, 10);
-  connection.query('UPDATE user SET password = ? WHERE id = ?',
-    [hache, req.auth.id],
-    (err, result) => {
-      if (err) {
-        console.log('Erreur lors de la modification du profil :', err.message);
-        return res.status(500).json({ message: 'Erreur serveur lors de la modification du profil.' });
+
+  try {
+    const hache = await bcrypt.hash(password, 10);
+    connection.query('UPDATE user SET password = ? WHERE id = ?',
+      [hache, req.auth.id],
+      (err, result) => {
+        if (err) {
+          console.log('Erreur lors de la modification du mot de passe :', err.message);
+          return res.status(500).json({ message: 'Erreur serveur lors de la modification du mot de passe.' });
+        }
+        return res.json({ message: 'Mot de passe modifié avec succès.' });
       }
-      return res.json({ message: 'Profil modifié avec succès.' });
-    }
-  );
-}
+    );
+  } catch (err) {
+    console.log('Erreur lors du hachage du mot de passe :', err.message);
+    return res.status(500).json({ message: 'Erreur serveur lors de la modification du mot de passe.' });
+  }
 });
-app.post('/Modifprofilphoto', auth, (req, res) => {
-  // a faire
-  return res.json({ message: 'cette fonctionnalité n\'est pas encore terminé' });
-  });
 
 app.post('/deleteprofil', auth, (req, res) => {
   const id = req.auth.id;
-  connection.query('SELECT admin,login FROM user WHERE id = ?', [id], 
+  connection.query('SELECT admin FROM user WHERE id = ?', [id],
     (err, result) => {
       if (err) {
-        console.log('Erreur lors de la vérification si il est admin ou non :', err.message);
-        return res.status(500).json({ message: 'Erreur serveur lors de la vérification si il est admin ou non.' });
+        console.log('Erreur lors de la vérification des droits d\'administrateur :', err.message);
+        return res.status(500).json({ message: 'Erreur serveur lors de la vérification des droits d\'administrateur.' });
       }
-      if (result.length == 0){ 
-              connection.query('DELETE FROM user WHERE id = ?', [id],
-              (err, result) => {
-                if (err) {
-                  console.log('Erreur lors de la suppression du profil :', err.message);
-                  return res.status(500).json({ message: 'Erreur serveur lors de la suppression du profil.' });
-                }
-                return res.json({ message: 'Profil supprimé avec succès.' });
-              }
-            );
-      } 
-      else if (result[0].admin == 1 && req.body.login != result[0].login) {
-        connection.query('DELETE FROM user WHERE login = ?', 
-          [req.body.login],
-          (err, result) => {
-            if (err) {
-              console.log('Erreur lors de la suppression du profil :', err.message);
-              return res.status(500).json({ message: 'Erreur serveur lors de la suppression du profil.' });
-            }
-            return res.json({ message: 'Profil supprimé avec succès.' });
+      if (result.length === 0) {
+        return res.status(404).json({ message: 'Utilisateur non trouvé.' });
+      }
+
+      if (result[0].admin === 1) {
+        return res.status(403).json({ message: 'Les administrateurs ne peuvent pas supprimer leur compte.' });
+      }
+
+      connection.query('DELETE FROM user WHERE id = ?', [id],
+        (err) => {
+          if (err) {
+            console.log('Erreur lors de la suppression du profil :', err.message);
+            return res.status(500).json({ message: 'Erreur serveur lors de la suppression du profil.' });
           }
-        );
-      } })});
-  
-app.get('/Allusers', auth, (req, res) => {
-  connection.query('SELECT admin FROM user WHERE id = ?', 
-    [req.auth.id],
-    (err, result) => {
-      if (err) {
-        console.log('Erreur lors de la vérification si il est admin ou non  :', err.message);
-        return res.status(500).json({ message: 'Erreur serveur lors de la vérification si il est admin ou non.' });
-      }
-      else if (result.length == 0 ) {
-        return res.status(403).json({ message: 'Vous n\'êtes pas autorisé a faire ceci.' });
-      }
-      else if (result[0].admin == 1) {
-        connection.query('SELECT login FROM user',
-          (err, result) => {
-            if (err) {
-              console.log('Erreur lors de la récupération deses utilisateurs :', err.message);
-              return res.status(500).json({ message: 'Erreur serveur lors de la récupération de tous les utilisateurs.' });
-            }
-            return res.json({ users: result });
-          }
-        );
-      }
-      else {
-        return res.status(403).json({ message: 'Vous n\'êtes pas autorisé a faire ceci.' });
-      }
-    })
+          return res.json({ message: 'Profil supprimé avec succès.' });
+        }
+      );
+    }
+  );
 });
   
+app.get('/admin/users', auth, (req, res) => {
+  connection.query('SELECT id, admin FROM user WHERE id = ?', [req.auth.id],
+    (err, result) => {
+      if (err) {
+        return res.status(500).json({ message: 'Erreur serveur.' });
+      }
+      if (result.length === 0 || result[0].admin !== 1) {
+        return res.status(403).json({ message: 'Accès refusé.' });
+      }
+
+      connection.query('SELECT id, login FROM user', (err, users) => {
+        if (err) {
+          return res.status(500).json({ message: 'Erreur serveur.' });
+        }
+        return res.json(users);
+      });
+    }
+  );
+});
+
+app.post('/admin/delete', auth, (req, res) => {
+  const { userId } = req.body;
+
+  connection.query('SELECT admin FROM user WHERE id = ?', [req.auth.id],
+    (err, result) => {
+      if (err) {
+        return res.status(500).json({ message: 'Erreur serveur.' });
+      }
+
+      if (result.length === 0 || result[0].admin !== 1) {
+        return res.status(403).json({ message: 'Accès refusé.' });
+      }
+
+      if (req.auth.id == userId) {
+        return res.status(400).json({ message: 'Impossible de supprimer votre propre compte.' });
+      }
+
+      connection.query('DELETE FROM user WHERE id = ?', [userId], (err, result) => {
+        if (err) {
+          return res.status(500).json({ message: 'Erreur serveur.' });
+        }
+        return res.json({ message: 'Utilisateur supprimé.' });
+      });
+    }
+  );
+});
+
 app.post('/deconnection', auth, (req, res) => {
-  //delete le token
-  res.clearCookie(req.auth.tokenId);
   res.json({ message: 'Déconnexion réussie.' });
 });
 //=========================================================================================================
