@@ -39,12 +39,14 @@ app.post('/register', async (req, res) => {
 
   const login = req.body.V_log;
   const motDePasse = req.body.V_pass;
+  const mail = req.body.V_mail;
+  const nom = req.body.V_nom;
+  const prenom = req.body.V_prenom;
 
-  if (typeof login !== 'string' || typeof motDePasse !== 'string') {
+  if (typeof login !== 'string' || typeof motDePasse !== 'string' || typeof mail !== 'string' || typeof nom !== 'string' || typeof prenom !== 'string') {
     console.log('[INSCRIPTION] Champs absents ou invalides.');
-    return res.status(400).json({ message: 'Veuillez remplir les deux champs.' });
+    return res.status(400).json({ message: 'Veuillez remplir tout les champs.' });
   }
-
   const loginUser = login.trim();
   console.log(`[INSCRIPTION] Vérification des champs pour le login de ${loginUser.length} caractères.`);
 
@@ -64,7 +66,6 @@ app.post('/register', async (req, res) => {
     console.log('[INSCRIPTION] Mot de passe trop long.');
     return res.status(400).json({ message: 'Le mot de passe ne doit pas dépasser 30 caractères.' });
   }
-
   console.log('[INSCRIPTION] Vérification du login dans la base.');
   connection.query(
     'SELECT login FROM user WHERE login = ?',
@@ -89,8 +90,8 @@ app.post('/register', async (req, res) => {
 
         console.log('[INSCRIPTION] Enregistrement du nouvel utilisateur.');
         connection.query(
-          'INSERT INTO user (login, password,dateCreation) VALUES (?, ?, ?)',
-          [loginUser, motDePasseHache, new Date()],
+          'INSERT INTO user (login, password,dateCreation,nom,prenom,mail) VALUES (?, ?, ?, ?, ?, ?)',
+          [loginUser, motDePasseHache, new Date(),nom,prenom,mail],
           (err, resultat) => {
             if (err) {
               console.log('[INSCRIPTION] Erreur pendant l’enregistrement :', err.message);

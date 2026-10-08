@@ -26,11 +26,22 @@
 
         <h2>Créer un compte</h2>
         <form id="inscriptionForm">
+            <label for="registerprenom">prenom</label>
+            <input id="registerprenom" name="prenom" type="text" minlength="3" maxlength="20" autocomplete="prenom" required>
+
+            <label for="registernom">nom</label>
+            <input id="registernom" name="nom" type="text" minlength="3" maxlength="20" autocomplete="nom" required>
+
+            <label for="registerMail">mail</label>
+            <input id="registerMail" name="mail" type="text" minlength="4" maxlength="35" autocomplete="mail" required>
+
             <label for="registerUser">Identifiant</label>
             <input id="registerUser" name="login" type="text" minlength="4" maxlength="20" autocomplete="username" required>
 
             <label for="registerPass">Mot de passe</label>
             <input id="registerPass" name="password" type="password" minlength="8" maxlength="30" autocomplete="new-password" required>
+
+
 
             <button id="btnInscription" type="button">S'inscrire</button>
             <p id="registerMsg" aria-live="polite"></p>

@@ -28,11 +28,14 @@ btnConnexion.addEventListener('click', function () {
 btnInscription.addEventListener('click', function () {
   const pseudo = document.getElementById('registerUser').value;
   const motDePasse = document.getElementById('registerPass').value;
+  const mail =document.getElementById('registerMail').value;
+  const prenom = document.getElementById('registerprenom').value;
+  const nom = document.getElementById('registernom').value;
 
   fetch('/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ V_log: pseudo, V_pass: motDePasse })
+    body: JSON.stringify({ V_log: pseudo, V_pass: motDePasse , V_mail:mail , V_prenom : prenom , V_nom : nom})
   })
     .then(function (reponse) { return reponse.json(); })
     .then(function (donnees) {
