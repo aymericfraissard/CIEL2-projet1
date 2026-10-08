@@ -20,14 +20,18 @@ fetch('/profil', {
 .then(response => response.json())
 .then(data => {
   if (document.getElementById('loginAffiche')) {
-    document.getElementById('loginAffiche').textContent = data.login;
+    document.getElementById('loginAffiche').textContent += data.login;
   }
   if (document.getElementById('dateCreation')) {
-    document.getElementById('dateCreation').textContent = new Date(data.dateCreation).toLocaleDateString();
+    document.getElementById('dateCreation').textContent += new Date(data.dateCreation).toLocaleDateString();
   }
+  
   if (document.getElementById('photoAffiche') && data.photo) {
     document.getElementById('photoAffiche').src = data.photo;
   }
+  document.getElementById('prenomInfo').textContent += data.prenom;
+  document.getElementById('nomInfo').textContent += data.nom;
+  document.getElementById('mailInfo').textContent += data.mail;
   isAdmin = data.admin === 1;
 
   // Si admin, cacher la section supprimer

@@ -181,7 +181,7 @@ app.post('/login', async (req, res) => {
 });
 
 app.get('/profil', auth, (req, res) => {
-  connection.query('SELECT login, dateCreation, admin FROM user WHERE id = ?',
+  connection.query('SELECT login, dateCreation, admin, nom,prenom,mail FROM user WHERE id = ?',
     [req.auth.id],
     (err, result) => {
       if (err) {
@@ -194,7 +194,7 @@ app.get('/profil', auth, (req, res) => {
         return res.status(404).json({ message: 'Utilisateur non trouvé.' });
       }
       const utilisateur = result[0];
-      return res.json({ login: utilisateur.login, dateCreation: utilisateur.dateCreation, admin: utilisateur.admin });
+      return res.json({ login: utilisateur.login, dateCreation: utilisateur.dateCreation, admin: utilisateur.admin, nom : utilisateur.nom , prenom : utilisateur.prenom , mail : utilisateur.mail});
     }
   );
 });
