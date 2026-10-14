@@ -9,10 +9,11 @@ const IPServer = process.env.IPServer;
 const auth = require('./middleware/auth');
 
 const connection = mysql.createConnection({ // configuration de la connexion à la base de données
-  host: process.env.ipBDD,
-  user: process.env.LoginBDD,
-  password: process.env.PasswordBDD,
-  database: process.env.DatabaseBDD 
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME
 });
 
 connection.connect((err) => {
@@ -48,7 +49,24 @@ app.post('/register', async (req, res) => {
     return res.status(400).json({ message: 'Veuillez remplir tout les champs.' });
   }
   const loginUser = login.trim();
+
+  //probleme lié à lissue
+  const nomUser = nom.trim();
+  const prenomUser = prenom.trim();
+  const mailUser = mail.trim();
+
   console.log(`[INSCRIPTION] Vérification des champs pour le login de ${loginUser.length} caractères.`);
+
+  //résolution issue
+  if (!nomUser || !prenomUser || !mailUser) {
+    console.log('[INSCRIPTION] Nom, prénom ou mail vide.');
+    return res.status(400).json({ message: 'Veuillez remplir tout les champs.' });
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mailUser)) {
+    console.log('[INSCRIPTION] Mail invalide.');
+    return res.status(400).json({ message: 'Adresse mail invalide.' });
+  }
+
 
   if (loginUser.length < 4) {
     console.log('[INSCRIPTION] Login trop court.');
@@ -90,8 +108,8 @@ app.post('/register', async (req, res) => {
 
         console.log('[INSCRIPTION] Enregistrement du nouvel utilisateur.');
         connection.query(
-          'INSERT INTO user (login, password,dateCreation,nom,prenom,mail) VALUES (?, ?, ?, ?, ?, ?)',
-          [loginUser, motDePasseHache, new Date(),nom,prenom,mail],
+          'INSERT INTO user (login, password, dateCreation, nom, prenom, mail) VALUES (?, ?, ?, ?, ?, ?)',
+          [loginUser, motDePasseHache, new Date(), nomUser, prenomUser, mailUser],
           (err, resultat) => {
             if (err) {
               console.log('[INSCRIPTION] Erreur pendant l’enregistrement :', err.message);
@@ -101,7 +119,7 @@ app.post('/register', async (req, res) => {
             console.log('[INSCRIPTION] Création du token.');
             jwt.sign(
               { id: resultat.insertId },
-              process.env.SecretJWT,
+              process.env.JWT_SECRET,
               { expiresIn: '24h' },
               (err, tokenId) => {
                 if (err) {
@@ -163,7 +181,7 @@ app.post('/login', async (req, res) => {
         console.log('[CONNEXION] Création du token.');
         jwt.sign(
           { id: utilisateur.id },
-          process.env.SecretJWT,
+          process.env.JWT_SECRET,
           { expiresIn: '24h' },
           (err, tokenId) => {
             if (err) {
@@ -194,7 +212,7 @@ app.get('/profil', auth, (req, res) => {
         return res.status(404).json({ message: 'Utilisateur non trouvé.' });
       }
       const utilisateur = result[0];
-      return res.json({ login: utilisateur.login, dateCreation: utilisateur.dateCreation, admin: utilisateur.admin, nom : utilisateur.nom , prenom : utilisateur.prenom , mail : utilisateur.mail});
+      return res.json({ login: utilisateur.login, dateCreation: utilisateur.dateCreation, admin: utilisateur.admin, nom: utilisateur.nom, prenom: utilisateur.prenom, mail: utilisateur.mail });
     }
   );
 });
@@ -259,7 +277,7 @@ app.post('/deleteprofil', auth, (req, res) => {
     }
   );
 });
-  
+
 app.get('/admin/users', auth, (req, res) => {
   connection.query('SELECT id, admin FROM user WHERE id = ?', [req.auth.id],
     (err, result) => {
